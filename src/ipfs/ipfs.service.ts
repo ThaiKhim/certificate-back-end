@@ -12,11 +12,18 @@ export class IpfsService {
     });
   }
 
-  async uploadFileToIPFS(file: Express.Multer.File): Promise<any> {
+  async uploadFileToIPFS(
+    file: Express.Multer.File,
+    buffer: Buffer,
+  ): Promise<any> {
     try {
+      console.log(file);
+      console.log(buffer);
+
       const upload = await this.pinata.upload.file(
-        new File([file.buffer], file.originalname, { type: file.mimetype }),
+        new File([buffer], file.originalname, { type: file.mimetype }),
       );
+
       return {
         cid: upload.IpfsHash,
         url: `${this.pinata.gateways}/ipfs/${upload.IpfsHash}`,

@@ -14,8 +14,15 @@ export class IpfsController {
 
   @Post('upload-file')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadFile(@UploadedFile() file: Express.Multer.File) {
-    const response = await this.ipfsService.uploadFileToIPFS(file);
+  async uploadFile(
+    @UploadedFile() file: Express.Multer.File,
+    @Body('buffer') buffer: string,
+  ) {
+    const bufferData = Buffer.from(buffer, 'base64');
+
+    console.log(bufferData);
+
+    const response = await this.ipfsService.uploadFileToIPFS(file, bufferData);
     return response;
   }
 
