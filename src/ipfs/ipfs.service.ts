@@ -8,7 +8,7 @@ export class IpfsService {
   constructor() {
     this.pinata = new PinataSDK({
       pinataJwt: process.env.PINATA_JWT!,
-      pinataGateway: 'example-gateway.mypinata.cloud',
+      pinataGateway: 'https://amber-parallel-falcon-815.mypinata.cloud',
     });
   }
 
@@ -16,17 +16,16 @@ export class IpfsService {
     file: Express.Multer.File,
     buffer: Buffer,
   ): Promise<any> {
-    try {
-      console.log(file);
-      console.log(buffer);
+    console.log(file);
 
+    try {
       const upload = await this.pinata.upload.file(
         new File([buffer], file.originalname, { type: file.mimetype }),
       );
 
       return {
         cid: upload.IpfsHash,
-        url: `${this.pinata.gateways}/ipfs/${upload.IpfsHash}`,
+        url: `${this.pinata.config.pinataGateway}/ipfs/${upload.IpfsHash}`,
       };
     } catch (error) {
       console.error('Error uploading file to IPFS:', error);
@@ -40,11 +39,14 @@ export class IpfsService {
         type: 'application/json',
       });
       const upload = await this.pinata.upload.file(
-        new File([jsonBlob], 'metadata.json', { type: 'application/json' }),
+        new File([jsonBlob], 'certificate.json', { type: 'application/json' }),
       );
+
+      console.log(this.pinata.gateways);
+
       return {
         cid: upload.IpfsHash,
-        url: `${this.pinata.gateways}/ipfs/${upload.IpfsHash}`,
+        url: `${this.pinata.config.pinataGateway}/ipfs/${upload.IpfsHash}`,
       };
     } catch (error) {
       console.error('Error uploading metadata to IPFS:', error);
