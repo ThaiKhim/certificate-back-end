@@ -12,7 +12,7 @@ export class ExplorerService {
   async getNftCollections(): Promise<any> {
     try {
       const response = await this.httpService
-        .get(`${this.explorerApi}?type=ERC-721`)
+        .get(`${this.explorerApi}/tokens?type=ERC-721`)
         .toPromise();
       return response.data;
     } catch (error) {
