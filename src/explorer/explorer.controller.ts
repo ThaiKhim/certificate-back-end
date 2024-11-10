@@ -23,3 +23,4 @@ export class ExplorerController {
     return await this.explorerService.getNftById(address, id);
   }
 }
+ 
