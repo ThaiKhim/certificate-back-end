@@ -105,7 +105,7 @@ export class ContractService {
         privateKey: createNfttDto.privateKey,
       });
 
-      const nftUrl = `${this.scanUrl}/token/${createNfttDto.contractAddress}/${createNfttDto.methodArgs[1]}`;
+      const nftUrl = `${this.scanUrl}/token/instance/${createNfttDto.contractAddress}/${createNfttDto.methodArgs[1]}`;
 
       return nftUrl;
     } catch (error) {
