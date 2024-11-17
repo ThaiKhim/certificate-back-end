@@ -5,7 +5,7 @@ import * as contractAbi from '../abi/abi.json';
 
 @Injectable()
 export class ContractService {
-  private provider: ethers.Provider;
+  private provider: ethers.JsonRpcProvider;
   private baseURI = 'https://amber-parallel-falcon-815.mypinata.cloud';
 
   constructor() {
@@ -31,6 +31,13 @@ export class ContractService {
 
       const contractAddress = await contract.getAddress();
 
+      await this.writeContract(
+        contractAddress,
+        'mintWithMetadata',
+        [await wallet.getAddress(), 0, ''],
+        privateKey,
+      );
+
       console.log(`Contract deployed at address: ${contractAddress}`);
 
       return contractAddress;
@@ -53,6 +60,32 @@ export class ContractService {
       return result;
     } catch (error) {
       console.error(`Error reading from contract method ${methodName}:`, error);
+      throw error;
+    }
+  }
+
+  async writeContract(
+    contractAddress: string,
+    methodName: string,
+    methodArgs: any[],
+    privateKey: string,
+  ): Promise<string> {
+    const { abi } = contractAbi;
+    try {
+      const wallet = new Wallet(privateKey, this.provider);
+      const contract = new ethers.Contract(contractAddress, abi, wallet);
+
+      const tx = await contract[methodName](...methodArgs);
+
+      console.log(`Transaction sent: ${tx.hash}`);
+
+      const receipt = await tx.wait();
+
+      console.log(`Transaction confirmed: ${receipt.transactionHash}`);
+
+      return receipt.transactionHash;
+    } catch (error) {
+      console.error(`Error writing to contract method ${methodName}:`, error);
       throw error;
     }
   }
