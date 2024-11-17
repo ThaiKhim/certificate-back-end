@@ -36,11 +36,22 @@ export class ExplorerService {
   async getNftById(address: string, id: number): Promise<any> {
     try {
       const response = await this.httpService
-        .get(`${this.explorerApi}/${address}/instances/${id}`)
+        .get(`${this.explorerApi}/tokens/${address}/instances/${id}`)
         .toPromise();
       return response.data;
     } catch (error) {
       console.error('Error fetching NFT by Id:', error.message);
+      throw error;
+    }
+  }
+
+  async getTokenCounters(contractAddress: string): Promise<any> {
+    try {
+      const url = `${this.explorerApi}/tokens/${contractAddress}/counters`;
+      const response = await this.httpService.get(url).toPromise();
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching token counters:', error.message);
       throw error;
     }
   }

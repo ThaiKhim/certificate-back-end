@@ -42,8 +42,6 @@ export class IpfsService {
         new File([jsonBlob], 'certificate.json', { type: 'application/json' }),
       );
 
-      console.log(this.pinata.gateways);
-
       return {
         cid: upload.IpfsHash,
         url: `${this.pinata.config.pinataGateway}/ipfs/${upload.IpfsHash}`,

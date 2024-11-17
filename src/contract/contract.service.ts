@@ -1,13 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { ethers, Wallet, ContractFactory } from 'ethers';
 import { DeployCertificateDto } from './dto/deploy.dto';
+import { WriteContractDto } from './dto/write.dto';
+import { CreateNfttDto } from './dto/create.dto';
 import * as contractAbi from '../abi/abi.json';
 
 @Injectable()
 export class ContractService {
   private provider: ethers.JsonRpcProvider;
   private baseURI = 'https://amber-parallel-falcon-815.mypinata.cloud';
-
+  private scanUrl = 'http://207.244.229.251';
   constructor() {
     const providerUrl = 'http://207.244.229.251:8549/';
     this.provider = new ethers.JsonRpcProvider(providerUrl);
@@ -31,16 +33,18 @@ export class ContractService {
 
       const contractAddress = await contract.getAddress();
 
-      await this.writeContract(
+      await this.writeContract({
         contractAddress,
-        'mintWithMetadata',
-        [await wallet.getAddress(), 0, ''],
+        methodName: 'mintWithMetadata',
+        methodArgs: [await wallet.getAddress(), 0, ''],
         privateKey,
-      );
+      });
 
       console.log(`Contract deployed at address: ${contractAddress}`);
 
-      return contractAddress;
+      const contractUrl = `${this.scanUrl}/address/${contractAddress}`;
+
+      return contractUrl;
     } catch (error) {
       console.error('Error deploying contract:', error);
       throw error;
@@ -64,28 +68,51 @@ export class ContractService {
     }
   }
 
-  async writeContract(
-    contractAddress: string,
-    methodName: string,
-    methodArgs: any[],
-    privateKey: string,
-  ): Promise<string> {
+  async writeContract(writeContractDto: WriteContractDto): Promise<string> {
     const { abi } = contractAbi;
     try {
-      const wallet = new Wallet(privateKey, this.provider);
-      const contract = new ethers.Contract(contractAddress, abi, wallet);
+      const wallet = new Wallet(writeContractDto.privateKey, this.provider);
+      const contract = new ethers.Contract(
+        writeContractDto.contractAddress,
+        abi,
+        wallet,
+      );
 
-      const tx = await contract[methodName](...methodArgs);
+      const tx = await contract[writeContractDto.methodName](
+        ...writeContractDto.methodArgs,
+      );
 
       console.log(`Transaction sent: ${tx.hash}`);
 
       const receipt = await tx.wait();
 
-      console.log(`Transaction confirmed: ${receipt.transactionHash}`);
-
       return receipt.transactionHash;
     } catch (error) {
-      console.error(`Error writing to contract method ${methodName}:`, error);
+      console.error(
+        `Error writing to contract method ${writeContractDto.methodName}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  async createNft(createNfttDto: CreateNfttDto): Promise<string> {
+    try {
+      await this.writeContract({
+        contractAddress: createNfttDto.contractAddress,
+        methodName: 'mintWithMetadata',
+        methodArgs: createNfttDto.methodArgs,
+        privateKey: createNfttDto.privateKey,
+      });
+
+      const nftUrl = `${this.scanUrl}/token/${createNfttDto.contractAddress}/${createNfttDto.methodArgs[1]}`;
+
+      return nftUrl;
+    } catch (error) {
+      console.error(
+        `Error create nft to contract ${createNfttDto.contractAddress}:`,
+        error,
+      );
       throw error;
     }
   }
