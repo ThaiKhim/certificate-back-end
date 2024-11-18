@@ -8,7 +8,7 @@ import * as contractAbi from '../abi/abi.json';
 @Injectable()
 export class ContractService {
   private provider: ethers.JsonRpcProvider;
-  private baseURI = 'https://amber-parallel-falcon-815.mypinata.cloud';
+  private baseURI = 'https://amber-parallel-falcon-815.mypinata.cloud/ipfs/';
   private scanUrl = 'http://207.244.229.251';
   constructor() {
     const providerUrl = 'http://207.244.229.251:8549/';
@@ -105,7 +105,7 @@ export class ContractService {
         privateKey: createNfttDto.privateKey,
       });
 
-      const nftUrl = `${this.scanUrl}/token/instance/${createNfttDto.contractAddress}/${createNfttDto.methodArgs[1]}`;
+      const nftUrl = `${this.scanUrl}/token/${createNfttDto.contractAddress}/instance/${createNfttDto.methodArgs[1]}`;
 
       return nftUrl;
     } catch (error) {
@@ -115,5 +115,15 @@ export class ContractService {
       );
       throw error;
     }
+  }
+
+  async getNftTotalSupply(contractAddress: string) {
+    const totalSupply = await this.readContract(
+      contractAddress,
+      'totalSupply',
+      [],
+    );
+
+    return totalSupply;
   }
 }
