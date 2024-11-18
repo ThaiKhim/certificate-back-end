@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param } from '@nestjs/common';
 import { ContractService } from './contract.service';
 import { DeployCertificateDto } from './dto/deploy.dto';
 import { CreateNfttDto } from './dto/create.dto';
@@ -18,6 +18,13 @@ export class ContractController {
   @Post('create')
   async writeContract(@Body() createNfttDto: CreateNfttDto) {
     const response = await this.contractService.createNft(createNfttDto);
+    return response;
+  }
+
+  @Get('get-total-supply/:address')
+  async getNftTotalSupply(@Param('address') contractAddress: string) {
+    const response =
+      await this.contractService.getNftTotalSupply(contractAddress);
     return response;
   }
 }
