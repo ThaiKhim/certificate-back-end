@@ -9,9 +9,9 @@ import * as contractAbi from '../abi/abi.json';
 export class ContractService {
   private provider: ethers.JsonRpcProvider;
   private baseURI = 'https://amber-parallel-falcon-815.mypinata.cloud/ipfs/';
-  private scanUrl = 'http://207.244.229.251';
+  private scanUrl = 'http://34.81.113.222';
   constructor() {
-    const providerUrl = 'http://207.244.229.251:8549/';
+    const providerUrl = 'http://34.81.113.222:8549/';
     this.provider = new ethers.JsonRpcProvider(providerUrl);
   }
 
