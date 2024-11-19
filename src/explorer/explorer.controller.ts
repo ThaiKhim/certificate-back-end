@@ -1,5 +1,6 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ExplorerService } from './explorer.service';
+import { ApiQuery } from '@nestjs/swagger';
 
 @Controller('nfts') // Add a common prefix to avoid ambiguity
 export class ExplorerController {
@@ -20,6 +21,17 @@ export class ExplorerController {
     @Param('id') id: number,
   ): Promise<any> {
     return await this.explorerService.getNftById(address, id);
+  }
+
+  // Route for fetching an NFT by its ID
+  @Get('get-all-nfts')
+  @ApiQuery({ name: 'page', required: true, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: true, type: Number, example: 10 })
+  async getAllNfts(
+    @Query('page') page: number,
+    @Query('limit') limit: number,
+  ): Promise<any> {
+    return this.explorerService.getNftsPaginated(page, limit);
   }
 
   // Route for fetching NFTs by contract address
