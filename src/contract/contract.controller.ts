@@ -2,6 +2,7 @@ import { Controller, Post, Body, Get, Param } from '@nestjs/common';
 import { ContractService } from './contract.service';
 import { DeployCertificateDto } from './dto/deploy.dto';
 import { CreateNfttDto } from './dto/create.dto';
+import { VerifyCertificateDto } from './dto/verify.dto';
 
 @Controller('contract')
 export class ContractController {
@@ -16,8 +17,27 @@ export class ContractController {
   }
 
   @Post('create')
-  async writeContract(@Body() createNfttDto: CreateNfttDto) {
+  async createNft(@Body() createNfttDto: CreateNfttDto) {
     const response = await this.contractService.createNft(createNfttDto);
+    return response;
+  }
+
+  @Post('verify')
+  async verifyCertificate(@Body() verifyCertificate: VerifyCertificateDto) {
+    const response =
+      await this.contractService.verifyCertificate(verifyCertificate);
+    return response;
+  }
+
+  @Get('verifiers/:address/:id')
+  async getVerifiersCertificate(
+    @Param('address') address: string,
+    @Param('id') id: number,
+  ) {
+    const response = await this.contractService.getVerifiersCertificate(
+      address,
+      id,
+    );
     return response;
   }
 

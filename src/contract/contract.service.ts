@@ -3,6 +3,7 @@ import { ethers, Wallet, ContractFactory } from 'ethers';
 import { DeployCertificateDto } from './dto/deploy.dto';
 import { WriteContractDto } from './dto/write.dto';
 import { CreateNfttDto } from './dto/create.dto';
+import { VerifyCertificateDto } from './dto/verify.dto';
 import * as contractAbi from '../abi/abi.json';
 
 @Injectable()
@@ -86,7 +87,7 @@ export class ContractService {
 
       const receipt = await tx.wait();
 
-      return receipt.transactionHash;
+      return receipt.hash;
     } catch (error) {
       console.error(
         `Error writing to contract method ${writeContractDto.methodName}:`,
@@ -111,6 +112,43 @@ export class ContractService {
     } catch (error) {
       console.error(
         `Error create nft to contract ${createNfttDto.contractAddress}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  async verifyCertificate(
+    verifyCertificateDto: VerifyCertificateDto,
+  ): Promise<string> {
+    try {
+      const result = await this.writeContract({
+        contractAddress: verifyCertificateDto.contractAddress,
+        methodName: 'verify',
+        methodArgs: [verifyCertificateDto.id],
+        privateKey: verifyCertificateDto.privateKey,
+      });
+
+      const txhashUrl = `${this.scanUrl}/tx/${result}`;
+
+      return txhashUrl;
+    } catch (error) {
+      console.error(
+        `Error verify certificate to contract ${verifyCertificateDto.contractAddress}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  async getVerifiersCertificate(address: string, id: number): Promise<string> {
+    try {
+      const result = await this.readContract(address, 'getVerifiers', [id]);
+
+      return result;
+    } catch (error) {
+      console.error(
+        `Error get verifiers certificate to contract ${address}:`,
         error,
       );
       throw error;

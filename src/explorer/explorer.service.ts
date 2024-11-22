@@ -53,7 +53,21 @@ export class ExplorerService {
       const response = await this.httpService
         .get(`${this.explorerApi}/tokens/${address}/instances/${id}`)
         .toPromise();
-      return response.data;
+
+      const data = response.data;
+
+      const formattedNFT = {
+        id: data.id,
+        image_url: data.image_url,
+        metadata: data.metadata,
+        owner: data.owner.hash,
+        token: {
+          address: data.token.address,
+          name: data.token.name,
+        },
+      };
+
+      return formattedNFT;
     } catch (error) {
       console.error('Error fetching NFT by Id:', error.message);
       throw error;
