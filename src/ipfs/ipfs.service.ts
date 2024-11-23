@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PinataSDK } from 'pinata-web3';
+import axios from 'axios';
 
 @Injectable()
 export class IpfsService {
@@ -16,8 +17,6 @@ export class IpfsService {
     file: Express.Multer.File,
     buffer: Buffer,
   ): Promise<any> {
-    console.log(file);
-
     try {
       const upload = await this.pinata.upload.file(
         new File([buffer], file.originalname, { type: file.mimetype }),
@@ -48,6 +47,21 @@ export class IpfsService {
       };
     } catch (error) {
       console.error('Error uploading metadata to IPFS:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Fetch data from an IPFS URL.
+   * @param url - The IPFS URL to fetch data from.
+   * @returns Parsed JSON or raw data from the IPFS URL.
+   */
+  async fetchDataFromIPFS(url: string): Promise<any> {
+    try {
+      const response = await axios.get(url);
+      return response.data; // Return parsed JSON or raw data.
+    } catch (error) {
+      console.error('Error fetching data from IPFS:', error);
       throw error;
     }
   }

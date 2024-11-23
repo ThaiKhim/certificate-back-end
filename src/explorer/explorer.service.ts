@@ -1,11 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
+import { ContractService } from 'src/contract/contract.service';
+import { IpfsService } from 'src/ipfs/ipfs.service';
 
 @Injectable()
 export class ExplorerService {
   private explorerApi: string;
 
-  constructor(private readonly httpService: HttpService) {
+  constructor(
+    private readonly ipfsService: IpfsService,
+    private readonly contractService: ContractService,
+    private readonly httpService: HttpService,
+  ) {
     this.explorerApi = process.env.EXPLORER_URL;
   }
 
@@ -39,7 +45,7 @@ export class ExplorerService {
   async getNfts(address: string): Promise<any> {
     try {
       const response = await this.httpService
-        .get(`${this.explorerApi}/${address}/instances`)
+        .get(`${this.explorerApi}/tokens/${address}/instances`)
         .toPromise();
       return response.data;
     } catch (error) {
@@ -48,8 +54,31 @@ export class ExplorerService {
     }
   }
 
+  async getNftIds(
+    address: string,
+  ): Promise<{ nftIds: number[]; nftName: string }> {
+    try {
+      const response = await this.getNfts(address);
+
+      const nftIds =
+        response?.items
+          ?.map((item: any) => parseInt(item.id, 10))
+          .filter((id: number) => id !== 0) || [];
+
+      const nftName = response?.items?.[0]?.token?.name || '';
+
+      return { nftIds, nftName };
+    } catch (error) {
+      console.error('Error fetching NFT IDs:', error.message);
+      throw error;
+    }
+  }
+
   async getNftById(address: string, id: number): Promise<any> {
     try {
+      const baseUri = await this.contractService.getBaseUri(address, id);
+      const metadata = await this.ipfsService.fetchDataFromIPFS(baseUri);
+
       const response = await this.httpService
         .get(`${this.explorerApi}/tokens/${address}/instances/${id}`)
         .toPromise();
@@ -58,8 +87,14 @@ export class ExplorerService {
 
       const formattedNFT = {
         id: data.id,
-        image_url: data.image_url,
-        metadata: data.metadata,
+        image_url: metadata.image,
+        metadata: {
+          ...metadata,
+          attributes: metadata.attributes.map((attr: any) => ({
+            trait_type: attr.trait_type,
+            value: attr.value,
+          })),
+        },
         owner: data.owner.hash,
         token: {
           address: data.token.address,
@@ -89,27 +124,39 @@ export class ExplorerService {
     try {
       const { addresses } = await this.getNftsAddresses();
 
-      let allItems: any[] = [];
+      const allItems: any[] = [];
 
       for (const address of addresses) {
-        const response = await this.httpService
-          .get(`${this.explorerApi}/tokens/${address}/instances`)
-          .toPromise();
+        const { nftIds, nftName } = await this.getNftIds(address);
 
-        const items = response.data.items
-          .filter((item: any) => item.metadata)
-          .map((item: any) => ({
-            id: item.id,
-            image_url: item.image_url,
-            metadata: item.metadata,
-            owner: item.owner.hash,
-            token: {
-              address: item.token.address,
-              name: item.token.name,
+        for (const id of nftIds) {
+          const baseUri = await this.contractService.getBaseUri(address, id);
+          const metadata = await this.ipfsService.fetchDataFromIPFS(baseUri);
+          const verifers = await this.contractService.getVerifiersCertificate(
+            address,
+            id,
+          );
+
+          const item = {
+            id,
+            image_url: metadata.image,
+            metadata: {
+              ...metadata,
+              attributes: metadata.attributes.map((attr: any) => ({
+                trait_type: attr.trait_type,
+                value: attr.value,
+              })),
             },
-          }));
+            owner: address,
+            token: {
+              address,
+              name: nftName,
+            },
+            verifers: verifers,
+          };
 
-        allItems = allItems.concat(items);
+          allItems.push(item);
+        }
       }
 
       const startIndex = (page - 1) * limit;

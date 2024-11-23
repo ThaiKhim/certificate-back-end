@@ -164,4 +164,45 @@ export class ContractService {
 
     return totalSupply;
   }
+
+  async getBaseUri(contractAddress: string, id: number) {
+    const tokenUri = await this.readContract(contractAddress, 'tokenURI', [id]);
+
+    return tokenUri;
+  }
+
+  async getIsVerifiedCertificate(
+    contractAddress: string,
+    verifer: string,
+    id: number,
+  ) {
+    const tokenUri = await this.readContract(contractAddress, 'isVerify', [
+      verifer,
+      id,
+    ]);
+
+    return tokenUri;
+  }
+
+  async getBaseUris(
+    contractAddresses: string,
+    ids: number[],
+  ): Promise<string[]> {
+    const baseUris: string[] = [];
+
+    for (let i = 0; i < ids.length; i++) {
+      try {
+        const uri = await this.getBaseUri(contractAddresses, ids[i]);
+        baseUris.push(uri);
+      } catch (error) {
+        console.error(
+          `Failed to fetch base URI for contract ${contractAddresses} and ID ${ids[i]}:`,
+          error,
+        );
+        baseUris.push(null);
+      }
+    }
+
+    return baseUris;
+  }
 }

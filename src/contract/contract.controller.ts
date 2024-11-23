@@ -41,6 +41,20 @@ export class ContractController {
     return response;
   }
 
+  @Get('verified/:address/:verifier/:id')
+  async getIsVerifiedCertificate(
+    @Param('address') address: string,
+    @Param('verifier') verifier: string,
+    @Param('id') id: number,
+  ) {
+    const response = await this.contractService.getIsVerifiedCertificate(
+      address,
+      verifier,
+      id,
+    );
+    return response;
+  }
+
   @Get('get-total-supply/:address')
   async getNftTotalSupply(@Param('address') contractAddress: string) {
     const response =

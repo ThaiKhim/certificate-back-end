@@ -4,6 +4,8 @@ import {
   UploadedFile,
   Body,
   UseInterceptors,
+  Get,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { IpfsService } from './ipfs.service';
@@ -30,5 +32,10 @@ export class IpfsController {
   async uploadMetadata(@Body() metadata: Record<string, any>) {
     const response = await this.ipfsService.uploadMetadataToIPFS(metadata);
     return response;
+  }
+
+  @Get('fetch')
+  async fetchData(@Query('url') url: string) {
+    return await this.ipfsService.fetchDataFromIPFS(url);
   }
 }
