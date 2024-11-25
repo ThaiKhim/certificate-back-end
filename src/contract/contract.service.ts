@@ -9,10 +9,10 @@ import * as contractAbi from '../abi/abi.json';
 @Injectable()
 export class ContractService {
   private provider: ethers.JsonRpcProvider;
-  private baseURI = 'https://amber-parallel-falcon-815.mypinata.cloud/ipfs/';
-  private scanUrl = 'http://34.81.113.222';
+  private baseURI = process.env.GATE_URL;
+  private scanUrl = process.env.SCAN_URL;
   constructor() {
-    const providerUrl = 'http://34.81.113.222:8549/';
+    const providerUrl = process.env.PROVIDER_URL;
     this.provider = new ethers.JsonRpcProvider(providerUrl);
   }
 
