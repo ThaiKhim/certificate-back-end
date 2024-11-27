@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ethers, Wallet, ContractFactory } from 'ethers';
+import { AdminService } from '../cockroach/admin.service';
 import { DeployCertificateDto } from './dto/deploy.dto';
 import { WriteContractDto } from './dto/write.dto';
 import { CreateNfttDto } from './dto/create.dto';
@@ -11,7 +12,7 @@ export class ContractService {
   private provider: ethers.JsonRpcProvider;
   private baseURI = process.env.GATE_URL;
   private scanUrl = process.env.SCAN_URL;
-  constructor() {
+  constructor(private readonly adminService: AdminService) {
     const providerUrl = process.env.PROVIDER_URL;
     this.provider = new ethers.JsonRpcProvider(providerUrl);
   }
@@ -23,6 +24,9 @@ export class ContractService {
     try {
       const wallet = new Wallet(privateKey, this.provider);
       const factory = new ContractFactory(abi, bytecode, wallet);
+      const admins = await this.adminService.findAllAddresses();
+
+      console.log(admins);
 
       const contract = await factory.deploy(
         certificateName,
@@ -40,6 +44,8 @@ export class ContractService {
         methodArgs: [await wallet.getAddress(), 0, ''],
         privateKey,
       });
+
+      await this.addOperator(contractAddress, admins, privateKey);
 
       console.log(`Contract deployed at address: ${contractAddress}`);
 
@@ -97,6 +103,30 @@ export class ContractService {
     }
   }
 
+  async addOperator(
+    contractAddress: string,
+    operators: string[],
+    privateKey: string,
+  ): Promise<string> {
+    try {
+      for (const operator of operators) {
+        await this.writeContract({
+          contractAddress: contractAddress,
+          methodName: 'addOperator',
+          methodArgs: [operator],
+          privateKey: privateKey,
+        });
+      }
+    } catch (error) {
+      console.error(
+        `Error add operator to contract ${contractAddress}:`,
+        error,
+      );
+      throw error;
+    }
+    return null;
+  }
+
   async createNft(createNfttDto: CreateNfttDto): Promise<string> {
     try {
       await this.writeContract({
@@ -141,11 +171,33 @@ export class ContractService {
     }
   }
 
-  async getVerifiersCertificate(address: string, id: number): Promise<string> {
+  async getVerifiersCertificate(address: string, id: number): Promise<any> {
     try {
-      const result = await this.readContract(address, 'getVerifiers', [id]);
+      const listVerifiers = await this.readContract(address, 'getVerifiers', [
+        id,
+      ]);
+      const admins = await this.adminService.findAll();
+      const result = [];
+      let verifiedCount: number = 0;
 
-      return result;
+      for (const admin of admins) {
+        if (admin.address && listVerifiers.includes(admin.address)) {
+          result.push({
+            name: admin.name,
+            address: admin.address,
+            verified: true,
+          });
+          verifiedCount++;
+        } else {
+          result.push({
+            name: admin.name,
+            address: admin.address,
+            verified: false,
+          });
+        }
+      }
+
+      return { result, verifiedCount };
     } catch (error) {
       console.error(
         `Error get verifiers certificate to contract ${address}:`,

@@ -21,6 +21,12 @@ export class AdminService {
     return this.adminRepository.find();
   }
 
+  // Get all admin addresses
+  async findAllAddresses(): Promise<string[]> {
+    const admins = await this.adminRepository.find();
+    return admins.map((admin) => admin.address).filter((address) => !!address);
+  }
+
   // Find an admin by ID
   async findById(id: number): Promise<Admin> {
     const admin = await this.adminRepository.findOne({ where: { id } });
@@ -34,7 +40,7 @@ export class AdminService {
   async findByEmail(email: string): Promise<Admin> {
     const admin = await this.adminRepository.findOne({ where: { email } });
     if (!admin) {
-      throw new NotFoundException(`Admin with email ${email} not found`);
+      return null;
     }
     return admin;
   }

@@ -124,45 +124,54 @@ export class ExplorerService {
     try {
       const { addresses } = await this.getNftsAddresses();
 
-      const allItems: any[] = [];
-
-      for (const address of addresses) {
-        const { nftIds, nftName } = await this.getNftIds(address);
-
-        for (const id of nftIds) {
-          const baseUri = await this.contractService.getBaseUri(address, id);
-          const metadata = await this.ipfsService.fetchDataFromIPFS(baseUri);
-          const verifers = await this.contractService.getVerifiersCertificate(
-            address,
-            id,
-          );
-
-          const item = {
-            id,
-            image_url: metadata.image,
-            metadata: {
-              ...metadata,
-              attributes: metadata.attributes.map((attr: any) => ({
-                trait_type: attr.trait_type,
-                value: attr.value,
-              })),
-            },
-            owner: address,
-            token: {
-              address,
-              name: nftName,
-            },
-            verifers: verifers,
-          };
-
-          allItems.push(item);
-        }
-      }
-
       const startIndex = (page - 1) * limit;
       const endIndex = page * limit;
 
-      const paginatedItems = allItems.slice(startIndex, endIndex);
+      const allItems: any[] = [];
+
+      await Promise.all(
+        addresses.map(async (address) => {
+          const { nftIds, nftName } = await this.getNftIds(address);
+
+          const paginatedNftIds = nftIds.slice(startIndex, endIndex);
+
+          const nftPromises = paginatedNftIds.map(async (id) => {
+            const baseUriPromise = this.contractService.getBaseUri(address, id);
+            const verifiersPromise =
+              this.contractService.getVerifiersCertificate(address, id);
+
+            const [baseUri, verifiers] = await Promise.all([
+              baseUriPromise,
+              verifiersPromise,
+            ]);
+
+            const metadata = await this.ipfsService.fetchDataFromIPFS(baseUri);
+
+            return {
+              id,
+              image_url: metadata.image,
+              metadata: {
+                ...metadata,
+                attributes: metadata.attributes.map((attr: any) => ({
+                  trait_type: attr.trait_type,
+                  value: attr.value,
+                })),
+              },
+              owner: address,
+              token: {
+                address,
+                name: nftName,
+              },
+              verifiers: verifiers.verifiedCount,
+            };
+          });
+
+          const items = await Promise.all(nftPromises);
+          allItems.push(...items);
+        }),
+      );
+
+      const paginatedItems = allItems.slice(0, limit);
 
       return {
         items: paginatedItems,
