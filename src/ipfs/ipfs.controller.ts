@@ -6,6 +6,7 @@ import {
   UseInterceptors,
   Get,
   Query,
+  Param,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { IpfsService } from './ipfs.service';
@@ -22,8 +23,6 @@ export class IpfsController {
   ) {
     const bufferData = Buffer.from(buffer, 'base64');
 
-    console.log(bufferData);
-
     const response = await this.ipfsService.uploadFileToIPFS(file, bufferData);
     return response;
   }
@@ -37,5 +36,11 @@ export class IpfsController {
   @Get('fetch')
   async fetchData(@Query('url') url: string) {
     return await this.ipfsService.fetchDataFromIPFS(url);
+  }
+
+  @Get('certificate/validate/:ipfsHash')
+  async validateCertificate(@Param('ipfsHash') ipfsHash: any) {
+    const response = await this.ipfsService.validateCertificate(ipfsHash);
+    return response;
   }
 }

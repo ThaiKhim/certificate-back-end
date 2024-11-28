@@ -1,12 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { PinataSDK } from 'pinata-web3';
 import axios from 'axios';
+import { ExplorerService } from 'src/explorer/explorer.service';
 
 @Injectable()
 export class IpfsService {
   private pinata: PinataSDK;
 
-  constructor() {
+  constructor(
+    @Inject(forwardRef(() => ExplorerService))
+    private readonly explorerService: ExplorerService,
+  ) {
     this.pinata = new PinataSDK({
       pinataJwt: process.env.PINATA_JWT!,
       pinataGateway: 'https://amber-parallel-falcon-815.mypinata.cloud',
@@ -51,18 +55,64 @@ export class IpfsService {
     }
   }
 
-  /**
-   * Fetch data from an IPFS URL.
-   * @param url - The IPFS URL to fetch data from.
-   * @returns Parsed JSON or raw data from the IPFS URL.
-   */
   async fetchDataFromIPFS(url: string): Promise<any> {
     try {
       const response = await axios.get(url);
-      return response.data; // Return parsed JSON or raw data.
+      return response.data;
     } catch (error) {
       console.error('Error fetching data from IPFS:', error);
       throw error;
     }
+  }
+
+  async validateCertificate(ipfsHash: string): Promise<boolean> {
+    const qrUrl = `${this.pinata.config.pinataGateway}/ipfs/${ipfsHash}`;
+
+    const qrData = await this.fetchDataFromIPFS(qrUrl);
+
+    const nftData = await this.explorerService.getNftById(
+      qrData.contract,
+      qrData.id,
+    );
+
+    try {
+      if (
+        qrData.name === nftData.metadata.name &&
+        this.compareAttributes(qrData.attributes, nftData.metadata.attributes)
+      ) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (error) {
+      console.error('Error validating certificate:', error);
+      throw error;
+    }
+  }
+
+  private compareAttributes(
+    qrAttributes: Array<{ trait_type: string; value: any }>,
+    nftAttributes: Array<{ trait_type: string; value: any }>,
+  ): boolean {
+    if (qrAttributes.length !== nftAttributes.length) {
+      return false;
+    }
+
+    console.log(qrAttributes);
+    console.log(nftAttributes);
+
+    for (const qrAttr of qrAttributes) {
+      const matchingNftAttr = nftAttributes.find(
+        (nftAttr) =>
+          nftAttr.trait_type === qrAttr.trait_type &&
+          nftAttr.value === qrAttr.value,
+      );
+
+      if (!matchingNftAttr) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }

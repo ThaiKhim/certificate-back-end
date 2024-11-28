@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ContractService } from 'src/contract/contract.service';
 import { IpfsService } from 'src/ipfs/ipfs.service';
@@ -8,6 +8,7 @@ export class ExplorerService {
   private explorerApi: string;
 
   constructor(
+    @Inject(forwardRef(() => IpfsService))
     private readonly ipfsService: IpfsService,
     private readonly contractService: ContractService,
     private readonly httpService: HttpService,
