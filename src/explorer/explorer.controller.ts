@@ -27,11 +27,30 @@ export class ExplorerController {
   @Get('get-all-nfts')
   @ApiQuery({ name: 'page', required: true, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: true, type: Number, example: 10 })
+  @ApiQuery({
+    name: 'owner',
+    required: false,
+    type: String,
+    example: '0xOwnerAddress',
+  })
+  @ApiQuery({
+    name: 'isVerified',
+    required: false,
+    type: Boolean,
+    example: true,
+  })
   async getAllNfts(
     @Query('page') page: number,
     @Query('limit') limit: number,
+    @Query('owner') owner?: string,
+    @Query('isVerified') isVerified?: boolean,
   ): Promise<any> {
-    return this.explorerService.getNftsPaginated(page, limit);
+    return this.explorerService.getNftsPaginated(
+      page,
+      limit,
+      owner,
+      isVerified,
+    );
   }
 
   // Route for fetching NFTs by contract address

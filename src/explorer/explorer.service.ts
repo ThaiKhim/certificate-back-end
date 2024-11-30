@@ -121,7 +121,12 @@ export class ExplorerService {
     }
   }
 
-  async getNftsPaginated(page: number, limit: number): Promise<any> {
+  async getNftsPaginated(
+    page: number,
+    limit: number,
+    owner?: string,
+    isVerified?: boolean,
+  ): Promise<any> {
     try {
       const { addresses } = await this.getNftsAddresses();
 
@@ -158,7 +163,7 @@ export class ExplorerService {
                   value: attr.value,
                 })),
               },
-              owner: address,
+              owner: metadata.address,
               token: {
                 address,
                 name: nftName,
@@ -168,7 +173,19 @@ export class ExplorerService {
           });
 
           const items = await Promise.all(nftPromises);
-          allItems.push(...items);
+
+          const filteredItems = items.filter((item) => {
+            const matchesOwner = owner ? item.owner === owner : true;
+            const matchesVerification =
+              isVerified === true
+                ? item.verifiers > 0
+                : isVerified === false
+                  ? item.verifiers === 0
+                  : true;
+            return matchesOwner && matchesVerification;
+          });
+
+          allItems.push(...filteredItems);
         }),
       );
 
